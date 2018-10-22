@@ -23,6 +23,11 @@ uint8_t CFREE(void* pFreeAddress)
     return 1;
 }
 
+void CB_printf(void* para)
+{
+    printf("timeout comming!\n");
+}
+
 //定时器线程，每一毫秒执行一次软中断函数，这个中断函数是自己的多定时器管理函数，所以在设置定时器超时宏定义的时候，值的单位是 ms
 void* MultiTimer_thread(void *parameter)
 {
@@ -64,4 +69,13 @@ void* MultiTimer_thread(void *parameter)
 void* User_Thread(void *parameter)
 {
     /*    user code   */
+    int err,signo;
+    sigset_t old_sig_mask;
+    if(err = pthread_sigmask(SIG_SETMASK,&g_sigset_mask,&old_sig_mask) != 0)
+    {
+        printf("\nset sig mask error!\n");
+        return ;
+    }
+    SetTimer(TIMER_0,1000,false,CB_printf,NULL);
+    while(1);
 }

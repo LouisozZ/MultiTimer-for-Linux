@@ -271,6 +271,7 @@ void CancleAllTimerTask()
 
 void MultiTimerInit()
 {
+    int index = 0;
     for(index = 0;index < MAX_TIMER_UPPER_LIMIT; index++)
     {
         switch(index)
