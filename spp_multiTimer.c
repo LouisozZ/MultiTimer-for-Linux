@@ -1,13 +1,13 @@
-#include "multiTimer.h"
+#include "spp_global.h"
 
 /**
  * @function    把一个定时任务添加到定时检测链表中
  * @parameter   一个定时器对象，可以由全局变量 g_aSPPMultiTimer 通过 TIMER_ID 映射得到
 */
-static void AddTimerToCheckList(tMultiTimer* pTimer)
+static void AddTimerToCheckList(tSppMultiTimer* pTimer)
 {
-    tMultiTimer* pEarliestTimer = NULL;
-    tMultiTimer* pEarliestTimer_pre = NULL;
+    tSppMultiTimer* pEarliestTimer = NULL;
+    tSppMultiTimer* pEarliestTimer_pre = NULL;
     
     CDebugAssert(pTimer->nInterval != 0);
 
@@ -77,7 +77,7 @@ static void AddTimerToCheckList(tMultiTimer* pTimer)
 
 /**
  * @function    设置一个定时任务，指定超时间隔与回调函数，当超时到来，自动执行回调
- * @parameter1  TIMER_ID    
+ * @parameter1  TIMER_ID    参看spp_def.h 定时器字段
  * @parameter2  超时间隔时间
  * @parameter3  是否是一次性定时任务
  * @parameter4  回调函数，注意，回调函数的函数形式  void function(void*);
@@ -87,7 +87,7 @@ static void AddTimerToCheckList(tMultiTimer* pTimer)
 uint8_t SetTimer(uint8_t nTimerID,uint32_t nInterval,bool bIsSingleUse,TimeoutCallBack* pCallBackFunction,void* pCallBackParameter)
 {
     printf("\nset timer %d\n",nTimerID);
-    tMultiTimer* pChoosedTimer = NULL;
+    tSppMultiTimer* pChoosedTimer = NULL;
     pChoosedTimer = g_aSPPMultiTimer[nTimerID];
     pChoosedTimer->nInterval = nInterval;
     pChoosedTimer->bIsSingleUse = bIsSingleUse;
@@ -111,10 +111,10 @@ uint8_t SetTimer(uint8_t nTimerID,uint32_t nInterval,bool bIsSingleUse,TimeoutCa
 uint8_t CancelTimerTask(uint8_t nTimerID,uint8_t nCancelMode)
 {
     printf("\ncancle timer %d\n",nTimerID);
-    tMultiTimer* pEarliestTimer = NULL;
-    tMultiTimer* pHandleTimer = NULL;
-    tMultiTimer* pHandleTimer_pre = NULL;
-    tMultiTimer* pChoosedTimer = NULL;
+    tSppMultiTimer* pEarliestTimer = NULL;
+    tSppMultiTimer* pHandleTimer = NULL;
+    tSppMultiTimer* pHandleTimer_pre = NULL;
+    tSppMultiTimer* pChoosedTimer = NULL;
 
     pEarliestTimer = g_pTimeoutCheckListHead;
     pChoosedTimer = g_aSPPMultiTimer[nTimerID];
@@ -207,9 +207,9 @@ void SYSTimeoutHandler(int signo)
     //printf("\nenter SYSTimeoutHandler\n");
     if(signo != SIGALRM)
         return;
-    tMultiTimer* pEarliestTimer = NULL;
-    tMultiTimer* pWaitingToHandle = NULL;
-    tMultiTimer* pEarliestTimerPreHandle = NULL;
+    tSppMultiTimer* pEarliestTimer = NULL;
+    tSppMultiTimer* pWaitingToHandle = NULL;
+    tSppMultiTimer* pEarliestTimerPreHandle = NULL;
 
     if(g_pTimeoutCheckListHead != NULL)
     {
@@ -245,8 +245,8 @@ void SYSTimeoutHandler(int signo)
 
 void CancleAllTimerTask()
 {
-    tMultiTimer* pEarliestTimer = NULL;
-    tMultiTimer* pHandleTimer = NULL;
+    tSppMultiTimer* pEarliestTimer = NULL;
+    tSppMultiTimer* pHandleTimer = NULL;
 
     while(g_pTimeoutCheckListHead != NULL)
     {
@@ -271,12 +271,43 @@ void CancleAllTimerTask()
 
 void MultiTimerInit()
 {
+    for(index = 0;index < MAX_TIMER_UPPER_LIMIT; index++)
+    {
+        switch(index)
+        {
+            case 0:
+                g_aDefaultTimeout[0] = TIME_OUT_INTERVAL_0;
+                g_aTimerID[0] = TIMER_0;
+                break;
+            case 1:
+                g_aDefaultTimeout[1] = TIME_OUT_INTERVAL_1;
+                g_aTimerID[1] = TIMER_1;
+                break;
+            case 2:
+                g_aDefaultTimeout[2] = TIME_OUT_INTERVAL_2;
+                g_aTimerID[2] = TIMER_2;
+                break;
+            case 3:
+                g_aDefaultTimeout[3] = TIME_OUT_INTERVAL_3;
+                g_aTimerID[3] = TIMER_3;
+                break;
+            case 4:
+                g_aDefaultTimeout[4] = TIME_OUT_INTERVAL_4;
+                g_aTimerID[4] = TIMER_4;
+                break;
+            case 5:
+                g_aDefaultTimeout[5] = TIME_OUT_INTERVAL_5;
+                g_aTimerID[5] = TIMER_5;
+                break;
+        }
+    }
+    
     g_pTimeoutCheckListHead = NULL;
     g_bIs_g_nAbsoluteTimeOverFlow = false;
     g_nAbsoluteTime = 0;
     for(uint8_t index = 0; index < MAX_TIMER_UPPER_LIMIT; index++)
     {
-        g_aSPPMultiTimer[index] = (tMultiTimer*)CMALLOC(sizeof(tMultiTimer));
+        g_aSPPMultiTimer[index] = (tSppMultiTimer*)CMALLOC(sizeof(tSppMultiTimer));
         g_aSPPMultiTimer[index]->nTimerID = g_aTimerID[index];
         g_aSPPMultiTimer[index]->nInterval = g_aDefaultTimeout[index];
         g_aSPPMultiTimer[index]->nTimeStamp = 0;
