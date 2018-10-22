@@ -6,11 +6,12 @@
 
 int main()
 {
-    
+    //定时器全局管理结构的初始化
     MultiTimerInit();
 
     int err;
 
+    //======================       此部分必须包含在 main() 中     =================================//
     sigset_t old_sig_mask;
     sigemptyset(&g_sigset_mask);
     sigaddset(&g_sigset_mask,SIGALRM);
@@ -20,7 +21,7 @@ int main()
         printf("\nset sig mask error!\n");
         return ;
     }
-    
+    //===========================================================================================//
     
     err = pthread_create(&nUserThread,NULL,User_Thread,NULL);
     if(err != 0)
