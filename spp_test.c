@@ -7,7 +7,7 @@
 int main()
 {
     //定时器全局管理结构的初始化
-    MultiTimerInit();
+    spp_timer_init();
 
     int err;
 

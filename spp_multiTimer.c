@@ -1,5 +1,27 @@
 #include "spp_global.h"
 
+sigset_t g_sigset_mask;
+
+//========================================================
+//               实现多定时任务的相关变量
+//========================================================
+//定时器实例的个数
+uint16_t MAX_TIMER_UPPER_LIMIT = 50;
+
+//定时器ID记录
+uint6_t TIMER_ID_RECORD = 0;
+
+//全局定时器链表
+tSppMultiTimer* g_pTimeoutCheckListHead;
+//全局绝对时间
+uint32_t g_nAbsoluteTime;
+//绝对时间超时与否
+bool g_bIs_g_nAbsoluteTimeOverFlow;
+
+//定时器实例数组
+tSppMultiTimer** g_aSPPMultiTimer;
+//========================================================
+
 /**
  * @function    把一个定时任务添加到定时检测链表中
  * @parameter   一个定时器对象，可以由全局变量 g_aSPPMultiTimer 通过 TIMER_ID 映射得到
@@ -84,7 +106,7 @@ static void AddTimerToCheckList(tSppMultiTimer* pTimer)
  * @parameter5  void* 回调函数的参数，建议用结构体强转成 void*，在回调函数中再强转回来  
  * @return      错误码 
 */
-uint8_t SetTimer(uint8_t nTimerID,uint32_t nInterval,bool bIsSingleUse,TimeoutCallBack* pCallBackFunction,void* pCallBackParameter)
+uint8_t SetTimer(uint16_t nTimerID,uint32_t nInterval,bool bIsSingleUse,TimeoutCallBack* pCallBackFunction,void* pCallBackParameter)
 {
     printf("\nset timer %d\n",nTimerID);
     tSppMultiTimer* pChoosedTimer = NULL;
@@ -95,7 +117,7 @@ uint8_t SetTimer(uint8_t nTimerID,uint32_t nInterval,bool bIsSingleUse,TimeoutCa
     pChoosedTimer->pTimeoutCallbackParameter = pCallBackParameter;
 
     //如果超时任务链表中已经有这个任务了，先取消，然后再设置，即重置超时任务
-    if(pChoosedTimer->pNextTimer != NULL || pChoosedTimer->pPreTimer != NULL)
+    if(pChoosedTimer->pNextTimer != NULL || pChoosedTimer->pPreTimer != NULL || pChoosedTimer->pNextHandle != NULL)
         CancelTimerTask(nTimerID,CANCEL_MODE_IMMEDIATELY);
         
     AddTimerToCheckList(pChoosedTimer);
@@ -108,7 +130,7 @@ uint8_t SetTimer(uint8_t nTimerID,uint32_t nInterval,bool bIsSingleUse,TimeoutCa
  * @parameter2  模式选择，是立即取消，还是下次执行后取消
  * @return      错误码
 */
-uint8_t CancelTimerTask(uint8_t nTimerID,uint8_t nCancelMode)
+uint8_t CancelTimerTask(uint16_t nTimerID,uint8_t nCancelMode)
 {
     printf("\ncancle timer %d\n",nTimerID);
     tSppMultiTimer* pEarliestTimer = NULL;
@@ -270,57 +292,62 @@ void CancleAllTimerTask()
 }
 
 void MultiTimerInit()
-{
-    int index = 0;
-    for(index = 0;index < MAX_TIMER_UPPER_LIMIT; index++)
-    {
-        switch(index)
-        {
-            case 0:
-                g_aDefaultTimeout[0] = TIME_OUT_INTERVAL_0;
-                g_aTimerID[0] = TIMER_0;
-                break;
-            case 1:
-                g_aDefaultTimeout[1] = TIME_OUT_INTERVAL_1;
-                g_aTimerID[1] = TIMER_1;
-                break;
-            case 2:
-                g_aDefaultTimeout[2] = TIME_OUT_INTERVAL_2;
-                g_aTimerID[2] = TIMER_2;
-                break;
-            case 3:
-                g_aDefaultTimeout[3] = TIME_OUT_INTERVAL_3;
-                g_aTimerID[3] = TIMER_3;
-                break;
-            case 4:
-                g_aDefaultTimeout[4] = TIME_OUT_INTERVAL_4;
-                g_aTimerID[4] = TIMER_4;
-                break;
-            case 5:
-                g_aDefaultTimeout[5] = TIME_OUT_INTERVAL_5;
-                g_aTimerID[5] = TIMER_5;
-                break;
-        }
-    }
-    
+{    
     g_pTimeoutCheckListHead = NULL;
     g_bIs_g_nAbsoluteTimeOverFlow = false;
     g_nAbsoluteTime = 0;
-    for(uint8_t index = 0; index < MAX_TIMER_UPPER_LIMIT; index++)
+    TIMER_ID_RECORD = 0;
+
+    g_aSPPMultiTimer = (tSppMultiTimer**)calloc(sizeof(tSppMultiTimer*),MAX_TIMER_UPPER_LIMIT);
+    return ;
+}
+
+void spp_timer_init()
+{
+    MultiTimerInit();
+}
+
+uint16_t spp_timer_create(uint32_t interval_ms,TimeoutCallBack cb,void* pCallBackParameter)
+{
+    if(TIMER_ID_RECORD >= MAX_TIMER_UPPER_LIMIT)
     {
-        g_aSPPMultiTimer[index] = (tSppMultiTimer*)CMALLOC(sizeof(tSppMultiTimer));
-        g_aSPPMultiTimer[index]->nTimerID = g_aTimerID[index];
-        g_aSPPMultiTimer[index]->nInterval = g_aDefaultTimeout[index];
-        g_aSPPMultiTimer[index]->nTimeStamp = 0;
-        g_aSPPMultiTimer[index]->bIsSingleUse = true;
-        g_aSPPMultiTimer[index]->bIsOverflow = false;
-        g_aSPPMultiTimer[index]->pTimeoutCallbackfunction = NULL;
-        g_aSPPMultiTimer[index]->pTimeoutCallbackParameter = NULL;
-        g_aSPPMultiTimer[index]->pNextTimer = NULL;
-        g_aSPPMultiTimer[index]->pPreTimer = NULL;
-        g_aSPPMultiTimer[index]->pNextHandle = NULL;
+        MAX_TIMER_UPPER_LIMIT += 50;
+        if(MAX_TIMER_UPPER_LIMIT < 50)
+            return -1;
+
+        g_aSPPMultiTimer = (tSppMultiTimer**)realloc(g_aSPPMultiTimer,sizeof(tSppMultiTimer*)*MAX_TIMER_UPPER_LIMIT);
     }
-    /*  如果预先规定了一些定时器，这个时候可以初始化除时间戳以外的其他值  */
-    //开启应答超时任务
-    //OPEN_MULTITIMER_MANGMENT();
+
+    g_aSPPMultiTimer[TIMER_ID_RECORD] = (tSppMultiTimer*)CMALLOC(sizeof(tSppMultiTimer));
+    g_aSPPMultiTimer[TIMER_ID_RECORD]->nTimerID = TIMER_ID_RECORD;
+    g_aSPPMultiTimer[TIMER_ID_RECORD]->nInterval = interval;
+    g_aSPPMultiTimer[TIMER_ID_RECORD]->nTimeStamp = 0;
+    g_aSPPMultiTimer[TIMER_ID_RECORD]->bIsSingleUse = true;
+    g_aSPPMultiTimer[TIMER_ID_RECORD]->bIsOverflow = false;
+    g_aSPPMultiTimer[TIMER_ID_RECORD]->pTimeoutCallbackfunction = cb;
+    g_aSPPMultiTimer[TIMER_ID_RECORD]->pTimeoutCallbackParameter = pCallBackParameter;
+    g_aSPPMultiTimer[TIMER_ID_RECORD]->pNextTimer = NULL;
+    g_aSPPMultiTimer[TIMER_ID_RECORD]->pPreTimer = NULL;
+    g_aSPPMultiTimer[TIMER_ID_RECORD]->pNextHandle = NULL;
+
+    return TIMER_ID_RECORD++;
+}
+
+void spp_timer_start(uint16_t handler)
+{
+    tSppMultiTimer* pChoosedTimer = NULL;
+    pChoosedTimer = g_aSPPMultiTimer[handler];
+    pChoosedTimer->bIsSingleUse = false;
+
+    //如果超时任务链表中已经有这个任务了，先取消，然后再设置，即重置超时任务
+    if(pChoosedTimer->pNextTimer != NULL || pChoosedTimer->pPreTimer != NULL || pChoosedTimer->pNextHandle != NULL)
+        CancelTimerTask(nTimerID,CANCEL_MODE_IMMEDIATELY);
+        
+    AddTimerToCheckList(pChoosedTimer);
+    return ;
+}
+
+void spp_timer_stop(uint16_t handler)
+{
+    CancelTimerTask(handler,CANCEL_MODE_IMMEDIATELY);
 }

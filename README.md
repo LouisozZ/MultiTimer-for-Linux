@@ -42,7 +42,7 @@
 	typedef void TimeoutCallBack(void*);	//回调函数格式
 	typedef struct tMultiTimer
 	{
-    	uint8_t nTimerID;       //设置宏定义
+    	uint16_t nTimerID;       //设置宏定义
     	uint32_t nInterval;     //定时时长
     	uint32_t nTimeStamp;    //时间戳
     	bool bIsSingleUse;      //是否单次使用

@@ -83,8 +83,13 @@ void* User_Thread(void *parameter)
     //===========================================================================================//
 
     //***** e.g. 1****//
+    uint16_t handler = 0;
+
+    handler = spp_timer_create(1000,CB_printf,NULL);
+    spp_timer_start(handler);
+
     //给定时器0添加定时任务，定时间隔为1000ms，是循环执行（即是定时器，不是计时器，回调函数是CB_printf，回调函数的参数是NULL
-    SetTimer(TIMER_0,1000,false,CB_printf,NULL);
+    //SetTimer(TIMER_0,1000,false,CB_printf,NULL);
     //设置一个定时器，参数说明：
     //参数一：设置的是定时器0;（可选项在 spp_def.h 中，line 44-49，是一个宏定义，需要结合 MAX_TIMER_UPPER_LIMIT 以及 g_aSPPMultiTimer 数组）
     //参数二：定时器间隔，单位ms；

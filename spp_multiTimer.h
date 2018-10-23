@@ -1,15 +1,18 @@
 #ifndef __SPP_MULTITIMER_H__
 #define __SPP_MULTITIMER_H__
 #include "spp_def.h"
+#include "signal.h"
 
 typedef void TimeoutCallBack(void*);
+
+extern sigset_t g_sigset_mask;
 
 //========================================================
 //                      timer结构定义
 //========================================================
 typedef struct tSppMultiTimer
 {
-    uint8_t nTimerID;       //see spp_def.h
+    uint16_t nTimerID;       //see spp_def.h
     uint32_t nInterval;     //定时时长
     uint32_t nTimeStamp;    //时间戳
     bool bIsSingleUse;      //是否单次使用
@@ -35,16 +38,17 @@ typedef struct tSppMultiTimer
 //               实现多定时任务的相关变量
 //========================================================
 //全局定时器链表
-tSppMultiTimer* g_pTimeoutCheckListHead;
+extern tSppMultiTimer* g_pTimeoutCheckListHead;
 //全局绝对时间
-uint32_t g_nAbsoluteTime;
+extern uint32_t g_nAbsoluteTime;
 //绝对时间超时与否
-bool g_bIs_g_nAbsoluteTimeOverFlow;
-
-//以下三个数组实现的是定时器编号与定时器的一一映射，且对应自己的默认超时间隔
-uint8_t g_aTimerID[MAX_TIMER_UPPER_LIMIT];
-tSppMultiTimer* g_aSPPMultiTimer[MAX_TIMER_UPPER_LIMIT];
-uint32_t g_aDefaultTimeout[MAX_TIMER_UPPER_LIMIT];
+extern bool g_bIs_g_nAbsoluteTimeOverFlow;
+//定时器实例的个数
+extern uint16_t MAX_TIMER_UPPER_LIMIT;
+//定时器ID记录
+extern uint6_t TIMER_ID_RECORD = 0;
+//定时器实例数组
+extern tSppMultiTimer** g_aSPPMultiTimer;
 
 //========================================================
 //                      外部接口
@@ -52,11 +56,16 @@ uint32_t g_aDefaultTimeout[MAX_TIMER_UPPER_LIMIT];
 //多定时器初始化
 void MultiTimerInit();
 //设置一个定时器
-uint8_t SetTimer(uint8_t nTimerID,uint32_t nInterval,bool bIsSingleUse,TimeoutCallBack* pCallBackFunction,void* pCallBackParameter);
+uint8_t SetTimer(uint16_t nTimerID,uint32_t nInterval,bool bIsSingleUse,TimeoutCallBack* pCallBackFunction,void* pCallBackParameter);
 //取消一个定时器任务
-uint8_t CancelTimerTask(uint8_t nTimerID,uint8_t nCancelMode);
+uint8_t CancelTimerTask(uint16_t nTimerID,uint8_t nCancelMode);
 //取消所有定时器任务
 void CancleAllTimerTask();
 //接收系统信号执行的软中断函数
 void SYSTimeoutHandler(int signo);
+
+void spp_timer_init();
+uint16_t spp_timer_create(uint32_t interval_ms,TimeoutCallBack cb,void* pCallBackParameter);
+void spp_timer_start(uint16_t handler);
+void spp_timer_stop(uint16_t handler);
 #endif

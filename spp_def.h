@@ -6,6 +6,7 @@
 //=====================================================================================
 
 //******************************  变量类型定义  ****************************************
+
 #ifndef __bool_defined
     enum BOOL{false,true};
     typedef enum BOOL bool;
@@ -37,25 +38,7 @@ typedef unsigned int            uint32_t;
 //-----------------------
 //定时器
 //-----------------------
-#define MAX_TIMER_UPPER_LIMIT   6
-
-//#define GetTimerID(x)   TIMER_##x
-
-#define TIMER_0                 0
-#define TIMER_1                 1       //timer ID
-#define TIMER_2                 2
-#define TIMER_3                 3
-#define TIMER_4                 4
-#define TIMER_5                 5
-
-//#define GetDefaultTimeoutInterval(x)    TIME_OUT_INTERVAL_##x
-
-#define TIME_OUT_INTERVAL_0     100
-#define TIME_OUT_INTERVAL_1     100     //超时间隔
-#define TIME_OUT_INTERVAL_2     100
-#define TIME_OUT_INTERVAL_3     100
-#define TIME_OUT_INTERVAL_4     100
-#define TIME_OUT_INTERVAL_5     100
+//#define MAX_TIMER_UPPER_LIMIT   6
 
 #define CANCEL_MODE_IMMEDIATELY         0xf9
 #define CANCEL_MODE_AFTER_NEXT_TIMEOUT  0x9f
