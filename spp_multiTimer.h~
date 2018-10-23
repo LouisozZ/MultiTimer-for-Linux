@@ -46,7 +46,7 @@ extern bool g_bIs_g_nAbsoluteTimeOverFlow;
 //定时器实例的个数
 extern uint16_t MAX_TIMER_UPPER_LIMIT;
 //定时器ID记录
-extern uint16_t TIMER_ID_RECORD;
+extern uint16_t TIMER_ID_RECORD = 0;
 //定时器实例数组
 extern tSppMultiTimer** g_aSPPMultiTimer;
 

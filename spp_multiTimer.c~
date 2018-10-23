@@ -9,7 +9,7 @@ sigset_t g_sigset_mask;
 uint16_t MAX_TIMER_UPPER_LIMIT = 50;
 
 //定时器ID记录
-uint16_t TIMER_ID_RECORD = 0;
+uint6_t TIMER_ID_RECORD = 0;
 
 //全局定时器链表
 tSppMultiTimer* g_pTimeoutCheckListHead;
@@ -320,7 +320,7 @@ uint16_t spp_timer_create(uint32_t interval_ms,TimeoutCallBack cb,void* pCallBac
 
     g_aSPPMultiTimer[TIMER_ID_RECORD] = (tSppMultiTimer*)CMALLOC(sizeof(tSppMultiTimer));
     g_aSPPMultiTimer[TIMER_ID_RECORD]->nTimerID = TIMER_ID_RECORD;
-    g_aSPPMultiTimer[TIMER_ID_RECORD]->nInterval = interval_ms;
+    g_aSPPMultiTimer[TIMER_ID_RECORD]->nInterval = interval;
     g_aSPPMultiTimer[TIMER_ID_RECORD]->nTimeStamp = 0;
     g_aSPPMultiTimer[TIMER_ID_RECORD]->bIsSingleUse = true;
     g_aSPPMultiTimer[TIMER_ID_RECORD]->bIsOverflow = false;
@@ -341,7 +341,7 @@ void spp_timer_start(uint16_t handler)
 
     //如果超时任务链表中已经有这个任务了，先取消，然后再设置，即重置超时任务
     if(pChoosedTimer->pNextTimer != NULL || pChoosedTimer->pPreTimer != NULL || pChoosedTimer->pNextHandle != NULL)
-        CancelTimerTask(handler,CANCEL_MODE_IMMEDIATELY);
+        CancelTimerTask(nTimerID,CANCEL_MODE_IMMEDIATELY);
         
     AddTimerToCheckList(pChoosedTimer);
     return ;
